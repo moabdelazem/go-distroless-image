@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -40,7 +41,9 @@ type HealthResponse struct {
 func WriteJSON(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+	}
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
@@ -65,8 +68,16 @@ func main() {
 	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.HandleFunc("/health", handleHealth(srvCfg)).Methods("GET")
 
+	srv := &http.Server{
+		Addr:         srvCfg.SrvPort,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
 	log.Printf("Server starting on port %s", srvCfg.SrvPort)
-	if err := http.ListenAndServe(srvCfg.SrvPort, r); err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

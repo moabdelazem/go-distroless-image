@@ -6,6 +6,9 @@ APP_NAME = "Distroless API"
 build:
 	@go build -o ./bin/main ./cmd/main.go
 
+test:
+	@go test -v ./...
+
 docker-build:
 	@docker build -t moabdelazem/my-configurable-api .
 
